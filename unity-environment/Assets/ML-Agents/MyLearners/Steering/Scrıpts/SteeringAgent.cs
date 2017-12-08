@@ -7,6 +7,7 @@ public class SteeringAgent : Agent {
 
     public enum RewardStyle { SimpleSparse, SimpleProgress };
     public enum StateStyle  { Local };
+    public enum MovementStyle { Local };
 
     public bool DebugMode = true;
 
@@ -51,12 +52,22 @@ public class SteeringAgent : Agent {
 
 
     public override List<float> CollectState() {
+
+        Debug.Log(string.Format("In collect state and cummulative reward is:{0}", CumulativeReward));
+        Debug.Log(string.Format("In collect state and reward is:{0}", reward));
+
         List<float> state = new List<float>();
 
         state.Add(transform.position.x);
         state.Add(transform.position.z);
 
         state.Add(transform.rotation.eulerAngles.y / 180.0f - 1.0f);
+
+        state.Add(car_rb.velocity.x);
+        state.Add(car_rb.velocity.z);
+
+        state.Add(car_rb.angularVelocity.y);
+
 
         Vector3[] target_points = FindClosestTargetPoints("Target", 1);
         foreach (Vector3 target_point in target_points) {
@@ -78,7 +89,8 @@ public class SteeringAgent : Agent {
             state.Add(wall_point.x - transform.position.x);
             state.Add(wall_point.z - transform.position.z);
         }
-        Debug.Log(string.Format("Collect state and cummulative reward is:{0}", CumulativeReward));
+
+
         return state;
     }
 
@@ -119,6 +131,7 @@ public class SteeringAgent : Agent {
         switch (rewardStyle) {
             case RewardStyle.SimpleSparse:
                 hitting_target_rewards_one = true;
+                reward -= MinusRewardStep;
                 break;
 
             case RewardStyle.SimpleProgress:
@@ -129,7 +142,7 @@ public class SteeringAgent : Agent {
                 last_distance = this_distance;
 
                 reward += delta / 100f;
-                //reward -= MinusRewardStep;
+                reward -= MinusRewardStep;
 
                 break;
         }
@@ -139,7 +152,6 @@ public class SteeringAgent : Agent {
 	public override void AgentReset()
 	{
         //Debug.Log(string.Format("Agent reset called in SteeringAgent.cs and the cummulative reward is:{0}", CumulativeReward));
-
         transform.position = initialPosition;
         transform.rotation = initialRotation;
 
