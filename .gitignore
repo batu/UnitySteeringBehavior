@@ -11,6 +11,8 @@
 /python/models
 /python/summaries
 
+[Bb]uilds/
+
 # Environemnt logfile
 *unity-environment.log
 
