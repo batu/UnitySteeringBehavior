@@ -6,6 +6,12 @@ TagManager:
   tags:
   - agent
   - iWall
+  - goal
+  - pit
+  - Wall
+  - Target
+  - Obstacle
+  - Academy
   layers:
   - Default
   - TransparentFX

@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import tensorflow as tf
 import tensorflow.contrib.layers as c_layers
 from tensorflow.python.tools import freeze_graph
@@ -41,6 +42,7 @@ def save_model(sess, saver, model_path="./", steps=0):
     print("Saved Model")
 
 
+    #Changed the output path
 def export_graph(model_path, env_name="env", target_nodes="action,value_estimate,action_probs"):
     """
     Exports latest saved model to .bytes format for Unity embedding.
@@ -49,14 +51,38 @@ def export_graph(model_path, env_name="env", target_nodes="action,value_estimate
     :param target_nodes: Comma separated string of needed output nodes for embedded graph.
     """
     ckpt = tf.train.get_checkpoint_state(model_path)
+
+    output_path = model_path + "/outputs"
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
     freeze_graph.freeze_graph(input_graph=model_path + '/raw_graph_def.pb',
                               input_binary=True,
                               input_checkpoint=ckpt.model_checkpoint_path,
                               output_node_names=target_nodes,
-                              output_graph=model_path + '/' + env_name + '.bytes',
-                              clear_devices=True, initializer_nodes="", input_saver="",
+                              output_graph=output_path + '/' + env_name + '.bytes',
+                              clear_devices=False, initializer_nodes="", input_saver="",
                               restore_op_name="save/restore_all", filename_tensor_name="save/Const:0")
 
+    
+def export_best_graph(trainer, model_path, env_name="env", target_nodes="action"):
+    """
+    Exports latest saved model to .bytes format for Unity embedding.
+    :param model_path: path of model checkpoints.
+    :param env_name: Name of associated Learning Environment.
+    :param target_nodes: Comma separated string of needed output nodes for embedded graph.
+    """
+    output_path = model_path + "/outputs"
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+
+    ckpt = tf.train.get_checkpoint_state(trainer.best_dir_path)
+    freeze_graph.freeze_graph(input_graph=trainer.best_dir_path + '/best_raw_graph_def.pb',
+                              input_binary=True,
+                              input_checkpoint=ckpt.model_checkpoint_path,
+                              output_node_names=target_nodes,
+                              output_graph=output_path + '/'  + env_name + "{0:.2f}_".format(trainer.best_reward) + '.bytes',
+                              clear_devices=False, initializer_nodes="", input_saver="",
+                              restore_op_name="save/restore_all", filename_tensor_name="save/Const:0")
 
 class PPOModel(object):
     def __init__(self):

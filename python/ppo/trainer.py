@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import os
 
 from ppo.history import *
 
@@ -25,6 +26,11 @@ class Trainer(object):
         self.is_continuous = is_continuous
         self.use_observations = use_observations
         self.use_states = use_states
+        
+         # Aytemiz added code
+        self.best_reward = -9999
+        self.best_checkpoint = None
+        self.best_dir_path = None
 
     def running_average(self, data, steps, running_mean, running_variance):
         """
@@ -184,6 +190,23 @@ class Trainer(object):
         self.stats['value_loss'].append(total_v)
         self.stats['policy_loss'].append(total_p)
         self.training_buffer = vectorize_history(empty_local_history({}))
+      
+    # Aytemiz added code.
+    def update_best(self, sess, saver, model_path  ="./" , steps = 0):
+            current_reward = np.mean(self.stats['cumulative_reward'])
+            #print("In update best the current_reward: {}".format(current_reward))
+
+            self.best_dir_path = model_path + "/model_bests"
+            self.best_checkpoint = self.best_dir_path + '/best_model.cptk'  
+
+            if not os.path.exists(self.best_dir_path):
+                os.makedirs(self.best_dir_path)
+
+            if current_reward > self.best_reward:
+                self.best_reward = current_reward 
+                saver.save(sess, self.best_checkpoint)
+                tf.train.write_graph(sess.graph_def, self.best_dir_path, 'best_raw_graph_def.pb', as_text=False)
+                print("Updated best model checkpoint!")
 
     def write_summary(self, summary_writer, steps, lesson_number):
         """
