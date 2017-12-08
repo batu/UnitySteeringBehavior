@@ -78,6 +78,7 @@ public class SteeringAgent : Agent {
             state.Add(wall_point.x - transform.position.x);
             state.Add(wall_point.z - transform.position.z);
         }
+        Debug.Log(string.Format("Collect state and cummulative reward is:{0}", CumulativeReward));
         return state;
     }
 
@@ -96,7 +97,7 @@ public class SteeringAgent : Agent {
 
 
     public override void AgentStep(float[] act) {
-        Debug.Log(string.Format("Agent step and cummulative reward is:{0}", CumulativeReward));
+        //Debug.Log(string.Format("Agent step and cummulative reward is:{0}", CumulativeReward));
 
         action = (int)act[0];
         if (action == 0) {
@@ -128,16 +129,16 @@ public class SteeringAgent : Agent {
                 last_distance = this_distance;
 
                 reward += delta / 100f;
-                reward -= MinusRewardStep;
+                //reward -= MinusRewardStep;
 
                 break;
         }
-        Debug.Log(string.Format("Agent step and cummulative reward is:{0}", CumulativeReward));
+
     }
 
 	public override void AgentReset()
 	{
-        Debug.Log(string.Format("Agent reset called in SteeringAgent.cs and the cummulative reward is:{0}", CumulativeReward));
+        //Debug.Log(string.Format("Agent reset called in SteeringAgent.cs and the cummulative reward is:{0}", CumulativeReward));
 
         transform.position = initialPosition;
         transform.rotation = initialRotation;
