@@ -37,9 +37,17 @@ public class SteeringAgent : Agent {
     bool hitting_target_rewards_one = false;
 
 
-    Vector3 initialPosition;
+    float cumulReward = 0;
+    Vector3 initialPosition, init_target_pos;
     Quaternion initialRotation;
-    float init_distance;
+    float init_distance, target_position_z;
+    public GameObject target;
+
+    public GameObject obstacle_holder;
+    public GameObject obstacle;
+
+
+    List<GameObject> obstacle_list;
     public override void InitializeAgent() {
         initialRotation = transform.rotation;
         initialPosition = transform.position;
@@ -47,14 +55,35 @@ public class SteeringAgent : Agent {
         init_distance = Vector3.Distance(transform.position, Target.transform.position);
         last_distance = init_distance;
         academy = GameObject.FindGameObjectWithTag("Academy").GetComponent<SteeringAcademy>();
+
+        obstacle_list = new List<GameObject>();
+
+        init_target_pos = target.transform.position;
     }
 
+    
+    void createObstacles() {
+        print("I am in obstacle creation.");
+
+        foreach( GameObject obs in obstacle_list) {
+            Destroy(obs);
+        }
+
+        float z_offset = 5 + academy.target_position_z;
+        float x_offset = 8;
+        print(academy.num_obstacles);
+        for (int i = 0; i <= academy.num_obstacles; i++){
+            GameObject obs = Instantiate(obstacle, initialPosition + new Vector3(Random.Range(-x_offset, x_offset), 0f, Random.Range(5, z_offset)), Quaternion.identity, obstacle_holder.transform) as GameObject;
+            obstacle_list.Add(obs);
+
+        }
+    }
 
 
     public override List<float> CollectState() {
 
-        Debug.Log(string.Format("In collect state and cummulative reward is:{0}", CumulativeReward));
-        Debug.Log(string.Format("In collect state and reward is:{0}", reward));
+        //Debug.Log(string.Format("In collect state and cummulative reward is:{0}", CumulativeReward));
+        //Debug.Log(string.Format("In collect state and reward is:{0}", reward));
 
         List<float> state = new List<float>();
 
@@ -76,7 +105,7 @@ public class SteeringAgent : Agent {
             state.Add(target_point.z - transform.position.z);
         }
 
-        Vector3[]  obs_points = FindClosestTargetPoints("Obstacle", 1);
+        Vector3[]  obs_points = FindClosestTargetPoints("Obstacle", 5);
         foreach(Vector3 obs_point in obs_points) {
             if(DebugMode) Debug.DrawLine(transform.position, obs_point);
             state.Add(obs_point.x - transform.position.x);
@@ -90,7 +119,8 @@ public class SteeringAgent : Agent {
             state.Add(wall_point.z - transform.position.z);
         }
 
-
+        cumulReward += reward;
+        //print(cumulReward);
         return state;
     }
 
@@ -98,6 +128,7 @@ public class SteeringAgent : Agent {
     private void OnCollisionEnter(Collision collision) {
         if (collision.collider.gameObject.tag == "Target" && hitting_target_rewards_one) {
             reward += 1;
+            cumulReward = -1;
             done = true;
             //Debug.Log(string.Format("OnCollisionEnter cummulative reward is:{0}", CumulativeReward));
         }
@@ -141,7 +172,7 @@ public class SteeringAgent : Agent {
                 float delta = last_distance - this_distance;
                 last_distance = this_distance;
 
-                reward += delta / 100f;
+                reward += delta / 10f;
                 reward -= MinusRewardStep;
 
                 break;
@@ -152,6 +183,8 @@ public class SteeringAgent : Agent {
 	public override void AgentReset()
 	{
         //Debug.Log(string.Format("Agent reset called in SteeringAgent.cs and the cummulative reward is:{0}", CumulativeReward));
+        createObstacles();
+
         transform.position = initialPosition;
         transform.rotation = initialRotation;
 
@@ -159,8 +192,11 @@ public class SteeringAgent : Agent {
 
         car_rb.velocity = Vector3.zero;
         car_rb.angularVelocity = Vector3.zero;
-        
 
+       
+        target.transform.position = init_target_pos + new Vector3(0f, 0f, academy.target_position_z);
+
+   
     }
 
     public override void AgentOnDone()
