@@ -1,0 +1,82 @@
+gamma = 0.99
+lambd = 0.95
+time_horizon = 2048
+beta = 0.001
+num_epoch = 5
+epsilon = 0.2
+buffer_size = 2048
+learning_rate = 0.0005
+hidden_units = 32
+batch_size = 64
+
+documentation = 
+V7
+No rotation, static obstacles. 5 wall seekers
+No noop
+NUM ENV = 1
+
+STATES:
+
+        List<float> state = new List<float>();
+
+        state.Add(transform.rotation.eulerAngles.y / 180.0f - 1.0f);
+
+        state.Add(car_rb.velocity.x);
+        state.Add(car_rb.velocity.z);
+
+        state.Add(car_rb.angularVelocity.y);
+
+        state.Add(Vector3.Distance(transform.position, target.transform.position));
+        state.Add(target.transform.position.x - transform.position.x);
+        state.Add(target.transform.position.z - transform.position.z);
+
+        Vector3[]  wall_points = FindClosestTargetPoints("Wall", 5);
+        foreach (Vector3 wall_point in wall_points) {
+            if (DebugMode) Debug.DrawLine(transform.position, wall_point);
+            state.Add(Vector3.Distance(transform.position, wall_point));
+            state.Add(wall_point.x - transform.position.x);
+            state.Add(wall_point.z - transform.position.z);
+        }
+
+        
+    private void OnCollisionEnter(Collision collision) {
+
+COLLISION:
+        if(rewardStyle == RewardStyle.ProgressAvoidObs) {
+            if (collision.collider.gameObject.tag == "Wall" || collision.collider.gameObject.tag == "Obstacle") {
+                reward -= 1f;
+                cumulReward = +1;
+                done = true;
+                //Debug.Log(string.Format("OnCollisionEnter cummulative reward is:{0}", CumulativeReward));
+            }
+        }
+        
+AGENT STEP:
+        action = (int)act[0];
+        if (action == 0) {
+            car_rb.AddForce(transform.forward * speed_mult, ForceMode.VelocityChange);
+        }
+        if (action == 1) {
+            car_rb.AddTorque(0f, turn_mult, 0f, ForceMode.VelocityChange);
+        }
+        if (action == 2) {
+            car_rb.AddTorque(0f, -turn_mult, 0f, ForceMode.VelocityChange);
+        }
+        car_rb.velocity = car_rb.velocity.magnitude * transform.forward;
+
+        if (car_rb.velocity.magnitude > maxSpeed) car_rb.velocity = car_rb.velocity * slowing_down_constant;
+
+            case RewardStyle.ProgressAvoidObs:
+                hitting_target_rewards_one = true;
+
+                this_distance = Vector3.Distance(transform.position, Target.transform.position);
+                delta = last_distance - this_distance;
+                last_distance = this_distance;
+
+                reward += delta / 10f;
+                reward -= MinusRewardStep;
+                break;
+
+        }
+        }
+

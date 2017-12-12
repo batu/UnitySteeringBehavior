@@ -1,0 +1,103 @@
+gamma = 0.99
+lambd = 0.95
+time_horizon = 2048
+beta = 0.001
+num_epoch = 5
+epsilon = 0.2
+buffer_size = 2048
+learning_rate = 0.0001
+hidden_units = 256
+batch_size = 64
+
+documentation = 
+NUM ENV = 1
+
+STATES:
+        state.Add(transform.position.x);
+        state.Add(transform.position.z);
+
+        state.Add(transform.rotation.eulerAngles.y / 180.0f - 1.0f);
+
+        state.Add(car_rb.velocity.x);
+        state.Add(car_rb.velocity.z);
+
+        state.Add(car_rb.angularVelocity.y);
+
+
+        Vector3[] target_points = FindClosestTargetPoints("Target", 1);
+        foreach (Vector3 target_point in target_points) {
+            if (DebugMode) Debug.DrawLine(transform.position, target_point);
+            state.Add(target_point.x - transform.position.x);
+            state.Add(target_point.z - transform.position.z);
+        }
+
+        Vector3[]  obs_points = FindClosestTargetPoints("Obstacle", 1);
+        foreach(Vector3 obs_point in obs_points) {
+            if(DebugMode) Debug.DrawLine(transform.position, obs_point);
+            state.Add(obs_point.x - transform.position.x);
+            state.Add(obs_point.z - transform.position.z);
+        }
+
+        Vector3[]  wall_points = FindClosestTargetPoints("Wall", 2);
+        foreach (Vector3 wall_point in wall_points) {
+            if (DebugMode) Debug.DrawLine(transform.position, wall_point);
+            state.Add(wall_point.x - transform.position.x);
+            state.Add(wall_point.z - transform.position.z);
+        }
+        //Debug.Log(string.Format("Collect state and cummulative reward is:{0}", CumulativeReward));
+        return state;
+        
+    private void OnCollisionEnter(Collision collision) {
+
+COLLISION:
+        if (collision.collider.gameObject.tag == "Target" && hitting_target_rewards_one) {
+            reward += 1;
+            done = true;
+            //Debug.Log(string.Format("OnCollisionEnter cummulative reward is:{0}", CumulativeReward));
+        }
+        
+AGENT STEP:
+        
+        action = (int)act[0];
+        if (action == 0) {
+            car_rb.AddForce(transform.forward * speed_mult, ForceMode.VelocityChange);
+        }
+        if (action == 1) {
+            car_rb.AddForce(-transform.forward * speed_mult, ForceMode.VelocityChange);
+        }
+        if (action == 2) {
+            car_rb.AddTorque(0f, turn_mult, 0f, ForceMode.VelocityChange);
+        }
+        if (action == 3) {
+            car_rb.AddTorque(0f, -turn_mult, 0f, ForceMode.VelocityChange);
+        }
+
+        if (car_rb.velocity.magnitude > maxSpeed) car_rb.velocity = car_rb.velocity * slowing_down_constant;
+
+            case RewardStyle.SimpleProgress:
+                hitting_target_rewards_one = true;
+
+                float this_distance = Vector3.Distance(transform.position, Target.transform.position);
+                float delta = last_distance - this_distance;
+                last_distance = this_distance;
+
+                reward += delta / 10f;
+                reward -= MinusRewardStep;
+
+                break;
+                
+            createObstacles();
+
+        transform.position = initialPosition + new Vector3(Random.Range(-4, 4), 0f, Random.Range(-2,2));
+        transform.rotation = Quaternion.Euler(0f,Random.Range(0,360), 0f);
+
+        last_distance = init_distance;
+
+        car_rb.velocity = Vector3.zero;
+        car_rb.angularVelocity = Vector3.zero;
+
+       
+        target.transform.position = init_target_pos + new Vector3(0f, 0f, academy.target_position_z);
+
+        }
+

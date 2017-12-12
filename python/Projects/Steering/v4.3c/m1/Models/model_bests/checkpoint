@@ -1,0 +1,6 @@
+model_checkpoint_path: "best_model.cptk"
+all_model_checkpoint_paths: "..\\model-1925000.cptk"
+all_model_checkpoint_paths: "..\\model-1950000.cptk"
+all_model_checkpoint_paths: "..\\model-1975000.cptk"
+all_model_checkpoint_paths: "..\\model-2000000.cptk"
+all_model_checkpoint_paths: "best_model.cptk"
